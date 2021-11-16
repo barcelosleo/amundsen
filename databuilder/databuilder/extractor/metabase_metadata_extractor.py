@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
-from typing import Any, Dict, Union, Iterator
+from typing import Any, Dict, List, Union, Iterator
 
 from pyhocon import ConfigTree
 
@@ -17,60 +17,52 @@ class MetabaseMetadataExtractor(BaseMetabaseExtractor):
     An extractor extracts record
     """
 
-    DATABASE_KEY = "database_name"
-
     def init(self, conf: ConfigTree) -> None:
         super().init(conf)
-        self.database_name = conf.get_string(self.DATABASE_KEY)
 
         self._extract_iter: Union[None, Iterator] = None
 
-    def _get_metabase_database_info(self, database_name: str) -> Dict:
+    def _get_databases(self) -> Dict:
         response = self._metabase_get("database")
-        response_json = response.json()
+        return response.json()["data"]
 
-        for database in response_json["data"]:
-            if database["name"] == database_name:
-                return database
+    def _get_metabase_databases_metadata(self) -> List:
+        databases = self._get_databases()
 
-        raise Exception(f'The database "{database_name}" was not found')
+        databases_metadata = []
 
-    def _get_metabase_database_metadata(self, database_name: str) -> Dict:
-        database_data = self._get_metabase_database_info(database_name)
+        for database in databases:
+            response = self._metabase_get(
+                f"database/{database['id']}/metadata"
+            )
+            databases_metadata.append(response.json())
 
-        response = self._metabase_get(
-            f"database/{database_data['id']}/metadata"
-        )
-        return response.json()
+        return databases_metadata
 
     def _get_extract_iter(self) -> Iterator[TableMetadata]:
-        database_metadata = self._get_metabase_database_metadata(
-            self.database_name
-        )
+        databases_metadata = self._get_metabase_databases_metadata()
 
-        if not database_metadata:
-            return None
-
-        for table in database_metadata["tables"]:
-            fields = []
-            for field in table["fields"]:
-                fields.append(
-                    ColumnMetadata(
-                        name=field["name"],
-                        description=field["description"],
-                        col_type=field["effective_type"],
-                        sort_order=field["position"],
+        for database_metadata in databases_metadata:
+            for table in database_metadata["tables"]:
+                fields = []
+                for field in table["fields"]:
+                    fields.append(
+                        ColumnMetadata(
+                            name=field["name"],
+                            description=field["description"],
+                            col_type=field["effective_type"],
+                            sort_order=field["position"],
+                        )
                     )
-                )
 
-            yield TableMetadata(
-                database=self.database_name,
-                cluster="",
-                schema=table["schema"],
-                name=table["name"],
-                description=table["description"],
-                columns=fields,
-            )
+                yield TableMetadata(
+                    database=database_metadata["name"],
+                    cluster="",
+                    schema=table["schema"],
+                    name=table["name"],
+                    description=table["description"],
+                    columns=fields,
+                )
 
     def extract(self) -> Any:
         """
