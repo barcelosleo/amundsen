@@ -57,6 +57,17 @@ class BaseMetabaseExtractor(Extractor):
 
         self.METABASE_SESSION_TOKEN = response_json["id"]
 
+    def _get_metabase_database(self, database_id: int) -> Dict:
+        response = self._metabase_get(f"database/{database_id}")
+        return response.json()
+
+    def _get_metabase_table(self, table_id: int) -> Dict:
+        response = self._metabase_get(f"table/{table_id}").json()
+        response["database_data"] = self._get_metabase_database(
+            response["db_id"]
+        )
+        return response
+
     def _metabase_get(
         self, endpoint, headers: Union[None, Dict] = None
     ) -> requests.Response:

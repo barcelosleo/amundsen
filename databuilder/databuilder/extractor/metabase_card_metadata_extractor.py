@@ -12,63 +12,51 @@ from databuilder.models.table_metadata import ColumnMetadata, TableMetadata
 LOGGER = logging.getLogger(__name__)
 
 
-class MetabaseMetadataExtractor(BaseMetabaseExtractor):
+class MetabaseCardMetadataExtractor(BaseMetabaseExtractor):
     """
     An extractor extracts record
     """
 
-    DATABASE_KEY = "database_name"
-
     def init(self, conf: ConfigTree) -> None:
         super().init(conf)
-        self.database_name = conf.get_string(self.DATABASE_KEY)
 
         self._extract_iter: Union[None, Iterator] = None
 
-    def _get_metabase_database_info(self, database_name: str) -> Dict:
-        response = self._metabase_get("database")
+    def _get_cards(self) -> Dict:
+        response = self._metabase_get("card")
+
         response_json = response.json()
 
-        for database in response_json["data"]:
-            if database["name"] == database_name:
-                return database
+        if len(response_json) > 0:
+            for card in response_json:
+                card["table_data"] = self._get_metabase_table(card["table_id"])
 
-        raise Exception(f'The database "{database_name}" was not found')
-
-    def _get_metabase_database_metadata(self, database_name: str) -> Dict:
-        database_data = self._get_metabase_database_info(database_name)
-
-        response = self._metabase_get(
-            f"database/{database_data['id']}/metadata"
-        )
-        return response.json()
+        return response_json
 
     def _get_extract_iter(self) -> Iterator[TableMetadata]:
-        database_metadata = self._get_metabase_database_metadata(
-            self.database_name
-        )
+        cards_metadata = self._get_cards()
 
-        if not database_metadata:
+        if not cards_metadata:
             return None
 
-        for table in database_metadata["tables"]:
+        for card in cards_metadata:
             fields = []
-            for field in table["fields"]:
+            for field in card["result_metadata"]:
                 fields.append(
                     ColumnMetadata(
-                        name=field["name"],
+                        name=field["display_name"],
                         description=field["description"],
                         col_type=field["effective_type"],
-                        sort_order=field["position"],
+                        sort_order=field["id"],
                     )
                 )
 
             yield TableMetadata(
-                database=self.database_name,
+                database=card["table_data"]["database_data"]["name"],
                 cluster="",
-                schema=table["schema"],
-                name=table["name"],
-                description=table["description"],
+                schema=card["table_data"]["schema"],
+                name=card["name"],
+                description=card["description"],
                 columns=fields,
             )
 
