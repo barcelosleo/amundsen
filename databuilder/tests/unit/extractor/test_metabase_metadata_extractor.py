@@ -22,14 +22,14 @@ class TestAthenaMetadataExtractor(unittest.TestCase):
         logging.basicConfig(level=logging.INFO)
 
         config_dict = {
-            f"extractor.metabase_metadata_extractor.{MetabaseMetadataExtractor.METABASE_URL_KEY}": "http://0.0.0.0:3000",
+            f"extractor.metabase_metadata_extractor.{MetabaseMetadataExtractor.METABASE_URL_KEY}": "http://0.0.0.0:3030",
             f"extractor.metabase_metadata_extractor.{MetabaseMetadataExtractor.API_USER_KEY}": "leonardo.machado@indicium.tech",
             f"extractor.metabase_metadata_extractor.{MetabaseMetadataExtractor.API_PASSWORD_KEY}": "gg6PfFcf5KUuYP@",
         }
         self.conf = ConfigFactory.from_dict(config_dict)
 
     def test_extractor(self) -> None:
-        extractor = MetabaseMetadataExtractor()
+        extractor = MetabaseCardMetadataExtractor()
         extractor.init(
             Scoped.get_scoped_conf(conf=self.conf, scope=extractor.get_scope())
         )
@@ -39,6 +39,7 @@ class TestAthenaMetadataExtractor(unittest.TestCase):
             print(extracted)
 
             if not extracted:
+                print(extracted.attrs.get("origin_table"))
                 break
 
         self.assertTrue(True)

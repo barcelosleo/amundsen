@@ -58,6 +58,7 @@ class MetabaseCardMetadataExtractor(BaseMetabaseExtractor):
                 name=card["name"],
                 description=card["description"],
                 columns=fields,
+                origin_table=card["table_data"]["name"],
             )
 
     def extract(self) -> Any:
