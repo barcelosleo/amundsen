@@ -14,7 +14,8 @@ LOGGER = logging.getLogger(__name__)
 
 class MetabaseMetadataExtractor(BaseMetabaseExtractor):
     """
-    An extractor extracts record
+    An extractor that extracts metadata from every database configured as
+    source for metabase
     """
 
     def init(self, conf: ConfigTree) -> None:
@@ -24,7 +25,11 @@ class MetabaseMetadataExtractor(BaseMetabaseExtractor):
 
     def _get_databases(self) -> Dict:
         response = self._metabase_get("database")
-        return response.json()["data"]
+        response_json = response.json()["data"]
+
+        LOGGER.info(f"Found {len(response_json)} databases...")
+
+        return response_json
 
     def _get_metabase_databases_metadata(self) -> List:
         databases = self._get_databases()
@@ -32,6 +37,8 @@ class MetabaseMetadataExtractor(BaseMetabaseExtractor):
         databases_metadata = []
 
         for database in databases:
+            LOGGER.info(f"Extracting metadata from \"{database['name']}\"...")
+
             response = self._metabase_get(
                 f"database/{database['id']}/metadata"
             )

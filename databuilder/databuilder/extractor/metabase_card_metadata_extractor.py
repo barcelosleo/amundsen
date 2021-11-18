@@ -14,7 +14,7 @@ LOGGER = logging.getLogger(__name__)
 
 class MetabaseCardMetadataExtractor(BaseMetabaseExtractor):
     """
-    An extractor extracts record
+    An extractor that extracts card metadata from metabase
     """
 
     def init(self, conf: ConfigTree) -> None:
@@ -28,7 +28,9 @@ class MetabaseCardMetadataExtractor(BaseMetabaseExtractor):
         response_json = response.json()
 
         if len(response_json) > 0:
+            LOGGER.info(f"Found {len(response_json)} Cards...")
             for card in response_json:
+                LOGGER.info(f"Extracting metadata from \"{card['name']}\"...")
                 card["table_data"] = self._get_metabase_table(card["table_id"])
 
         return response_json

@@ -29,18 +29,18 @@ class TestAthenaMetadataExtractor(unittest.TestCase):
         self.conf = ConfigFactory.from_dict(config_dict)
 
     def test_extractor(self) -> None:
-        extractor = MetabaseCardMetadataExtractor()
+        extractor = MetabaseMetadataExtractor()
         extractor.init(
             Scoped.get_scoped_conf(conf=self.conf, scope=extractor.get_scope())
         )
 
         while True:
             extracted = extractor.extract()
-            print(extracted)
 
             if not extracted:
-                print(extracted.attrs.get("origin_table"))
                 break
+
+            print(extracted)
 
         self.assertTrue(True)
 
