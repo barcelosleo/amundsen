@@ -29,7 +29,7 @@ class TestAthenaMetadataExtractor(unittest.TestCase):
         self.conf = ConfigFactory.from_dict(config_dict)
 
     def test_extractor(self) -> None:
-        extractor = MetabaseMetadataExtractor()
+        extractor = MetabaseCardMetadataExtractor()
         extractor.init(
             Scoped.get_scoped_conf(conf=self.conf, scope=extractor.get_scope())
         )

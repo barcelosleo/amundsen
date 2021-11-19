@@ -27,11 +27,27 @@ class MetabaseCardMetadataExtractor(BaseMetabaseExtractor):
 
         response_json = response.json()
 
-        if len(response_json) > 0:
-            LOGGER.info(f"Found {len(response_json)} Cards...")
+        total_cards = len(response_json)
+        loaded = 1
+
+        if total_cards > 0:
+            LOGGER.info(f"Found {total_cards} Cards...")
             for card in response_json:
-                LOGGER.info(f"Extracting metadata from \"{card['name']}\"...")
-                card["table_data"] = self._get_metabase_table(card["table_id"])
+                LOGGER.info(
+                    f"Extracting metadata from the card {loaded} of {total_cards} \"{card['name']}\"..."
+                )
+                card["table_data"] = (
+                    self._get_metabase_table(card["table_id"])
+                    if card["table_id"]
+                    else None
+                )
+                card["database_data"] = (
+                    self._get_metabase_database(card["database_id"])
+                    if card["database_id"]
+                    else None
+                )
+
+                loaded += 1
 
         return response_json
 
@@ -53,14 +69,25 @@ class MetabaseCardMetadataExtractor(BaseMetabaseExtractor):
                     )
                 )
 
+            database_name = ""
+            schema_name = ""
+            origin_table_name = ""
+
+            if card["database_data"]:
+                database_name = card["database_data"]["name"]
+
+            if card["table_data"]:
+                schema_name = card["table_data"]["schema"]
+                origin_table_name = card["table_data"]["name"]
+
             yield TableMetadata(
-                database=card["table_data"]["database_data"]["name"],
+                database=database_name,
                 cluster="",
-                schema=card["table_data"]["schema"],
+                schema=schema_name,
                 name=card["name"],
                 description=card["description"],
                 columns=fields,
-                origin_table=card["table_data"]["name"],
+                origin_table=origin_table_name,
             )
 
     def extract(self) -> Any:
