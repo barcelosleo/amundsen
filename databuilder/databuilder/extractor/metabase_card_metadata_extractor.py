@@ -27,12 +27,17 @@ class MetabaseCardMetadataExtractor(BaseMetabaseExtractor):
 
         response_json = response.json()
 
-        total_cards = len(response_json)
+        return response_json
+
+    def _get_extract_iter(self) -> Iterator[TableMetadata]:
+        cards = self._get_cards()
+
+        total_cards = len(cards)
         loaded = 1
 
         if total_cards > 0:
             LOGGER.info(f"Found {total_cards} Cards...")
-            for card in response_json:
+            for card in cards:
                 LOGGER.info(
                     f"Extracting metadata from the card {loaded} of {total_cards} \"{card['name']}\"..."
                 )
@@ -47,48 +52,42 @@ class MetabaseCardMetadataExtractor(BaseMetabaseExtractor):
                     else None
                 )
 
-                loaded += 1
+                fields = []
+                for field in card["result_metadata"]:
 
-        return response_json
-
-    def _get_extract_iter(self) -> Iterator[TableMetadata]:
-        cards_metadata = self._get_cards()
-
-        if not cards_metadata:
-            return None
-
-        for card in cards_metadata:
-            fields = []
-            for field in card["result_metadata"]:
-                fields.append(
-                    ColumnMetadata(
-                        name=field["display_name"],
-                        description=field["description"],
-                        col_type=field["effective_type"],
-                        sort_order=field["id"],
+                    fields.append(
+                        ColumnMetadata(
+                            name=field["display_name"],
+                            description=field["description"]
+                            if "description" in field
+                            else "",
+                            col_type=field["base_type"],
+                            sort_order=field["id"] if "id" in field else 0,
+                        )
                     )
+
+                database_name = ""
+                schema_name = ""
+                origin_table_name = ""
+
+                if card["database_data"]:
+                    database_name = card["database_data"]["name"]
+
+                if card["table_data"]:
+                    schema_name = card["table_data"]["schema"]
+                    origin_table_name = card["table_data"]["name"]
+
+                yield TableMetadata(
+                    database=database_name,
+                    cluster="",
+                    schema=schema_name,
+                    name=card["name"],
+                    description=card["description"],
+                    columns=fields,
+                    origin_table=origin_table_name,
                 )
 
-            database_name = ""
-            schema_name = ""
-            origin_table_name = ""
-
-            if card["database_data"]:
-                database_name = card["database_data"]["name"]
-
-            if card["table_data"]:
-                schema_name = card["table_data"]["schema"]
-                origin_table_name = card["table_data"]["name"]
-
-            yield TableMetadata(
-                database=database_name,
-                cluster="",
-                schema=schema_name,
-                name=card["name"],
-                description=card["description"],
-                columns=fields,
-                origin_table=origin_table_name,
-            )
+                loaded += 1
 
     def extract(self) -> Any:
         """
