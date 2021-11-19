@@ -53,18 +53,19 @@ class MetabaseCardMetadataExtractor(BaseMetabaseExtractor):
                 )
 
                 fields = []
-                for field in card["result_metadata"]:
+                if card["result_metadata"]:
+                    for field in card["result_metadata"]:
 
-                    fields.append(
-                        ColumnMetadata(
-                            name=field["display_name"],
-                            description=field["description"]
-                            if "description" in field
-                            else "",
-                            col_type=field["base_type"],
-                            sort_order=field["id"] if "id" in field else 0,
+                        fields.append(
+                            ColumnMetadata(
+                                name=field["display_name"],
+                                description=field["description"]
+                                if "description" in field
+                                else "",
+                                col_type=field["base_type"],
+                                sort_order=field["id"] if "id" in field else 0,
+                            )
                         )
-                    )
 
                 database_name = ""
                 schema_name = ""
