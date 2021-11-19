@@ -22,9 +22,9 @@ class TestAthenaMetadataExtractor(unittest.TestCase):
         logging.basicConfig(level=logging.INFO)
 
         config_dict = {
-            f"extractor.metabase_metadata_extractor.{MetabaseMetadataExtractor.METABASE_URL_KEY}": "http://0.0.0.0:3030",
-            f"extractor.metabase_metadata_extractor.{MetabaseMetadataExtractor.API_USER_KEY}": "leonardo.machado@indicium.tech",
-            f"extractor.metabase_metadata_extractor.{MetabaseMetadataExtractor.API_PASSWORD_KEY}": "gg6PfFcf5KUuYP@",
+            f"extractor.metabase_metadata_extractor.{MetabaseCardMetadataExtractor.METABASE_URL_KEY}": "https://metabase.indicium.tech",
+            f"extractor.metabase_metadata_extractor.{MetabaseCardMetadataExtractor.API_USER_KEY}": "leonardo.machado@indicium.tech",
+            f"extractor.metabase_metadata_extractor.{MetabaseCardMetadataExtractor.API_PASSWORD_KEY}": "l20952509@Indicium",
         }
         self.conf = ConfigFactory.from_dict(config_dict)
 

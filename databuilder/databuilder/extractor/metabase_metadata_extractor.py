@@ -25,7 +25,11 @@ class MetabaseMetadataExtractor(BaseMetabaseExtractor):
 
     def _get_databases(self) -> Dict:
         response = self._metabase_get("database")
-        response_json = response.json()["data"]
+        response_json = response.json()
+
+        # Backwards compatibility
+        if "data" in response_json:
+            response_json = response_json["data"]
 
         LOGGER.info(f"Found {len(response_json)} databases...")
 
